@@ -7,6 +7,7 @@ private.properties
 *.udf
 *.pyc
 .vs
+.idea
 [dD]ebug.[wW]in32
 Release.Win32
 /bin/
