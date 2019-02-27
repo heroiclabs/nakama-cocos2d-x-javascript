@@ -14,7 +14,7 @@
     "jsList" : [
         "src/resource.js",
         "src/app.js",
-        "src/ThirdParty/bluebird.min.js",
+        "src/NakamaSDK/ThirdParty/polyfill.min.js",
         "src/NakamaSDK/nakama-js.umd.js"
     ]
 }
