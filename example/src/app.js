@@ -142,6 +142,8 @@ var HelloWorldLayer = cc.Layer.extend({
     },
 
     onValidSession : function () {
+        const expiresat = this.session.expires_at;
+        cc.log("Session will expire at", new Date(expiresat * 1000).toISOString());
         this.connect();
     },
 
@@ -165,11 +167,11 @@ var HelloWorldLayer = cc.Layer.extend({
         this.socket.connect(this.session, createStatus)
             .then(
                 function() {
-                    cc.log("connect ok");
+                    cc.log("connected");
                     self.onSocketConnected();
                 },
                 function(error) {
-                    cc.log("connect failed: " + error.toString());
+                    cc.log("connect failed:", JSON.stringify(error));
                 }
             );
     },
@@ -201,7 +203,7 @@ var HelloWorldLayer = cc.Layer.extend({
                     self.sendChatMessage("Hey dude!");
                 },
                 function(error) {
-                    cc.log("join chat failed. " + error.toString());
+                    cc.log("join chat failed:", JSON.stringify(error));
                 }
             );
     },
