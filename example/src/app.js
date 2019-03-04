@@ -68,8 +68,13 @@ var HelloWorldLayer = cc.Layer.extend({
             window.atob = nakamajs.atob;
         }
 
-        this.client = new nakamajs.Client("defaultkey", "127.0.0.1", 7350);
-        this.client.ssl = false;
+        var serverkey = "defaultkey";
+        var host = "127.0.0.1";
+        var port = 7350;
+        var useSSL = false;
+        var timeout = 7000; // ms
+
+        this.client = new nakamajs.Client(serverkey, host, port, useSSL, timeout);
 
         if (this.restoreSession()) {
             this.onValidSession();
