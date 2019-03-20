@@ -9,6 +9,12 @@ This client implements the full API and socket options with the server. It's wri
 
 Full documentation is online - https://heroiclabs.com/docs/cocos2d-js-client-guide
 
+## Supported Cocos2d-x and platforms
+
+Any Cocos2d-x version should work. Tested on Cocos2d-x 3.17 and 3.17.1.
+
+Supported all platforms which Cocos2d-x supports.
+
 ## Getting Started
 
 You'll need to setup the server and database before you can connect with the client. The simplest way is to use Docker but have a look at the [server documentation](https://github.com/heroiclabs/nakama#getting-started) for other options.
