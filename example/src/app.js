@@ -24,6 +24,7 @@
 
 var HelloWorldLayer = cc.Layer.extend({
     sprite: null,
+    nakamaLogo: null,
     label: null,
     session: null,
     client: null,
@@ -52,13 +53,21 @@ var HelloWorldLayer = cc.Layer.extend({
         // add the label as a child to this layer
         this.addChild(this.label, 5);
 
-        // add "HelloWorld" splash screen"
+        // add "HelloWorld" splash screen
         this.sprite = new cc.Sprite(res.HelloWorld_png);
         this.sprite.attr({
-            x: size.width / 2,
+            x: size.width * 0.7,
             y: size.height / 2
         });
         this.addChild(this.sprite, 0);
+        
+        // add "Nakama" logo
+        this.nakamaLogo = new cc.Sprite(res.NakamaLogo_png);
+        this.nakamaLogo.attr({
+            x: size.width * 0.3,
+            y: size.height / 2
+        });
+        this.addChild(this.nakamaLogo, 0);
 
         var serverkey = "defaultkey";
         var host = "127.0.0.1";

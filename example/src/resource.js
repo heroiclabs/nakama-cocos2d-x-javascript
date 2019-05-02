@@ -24,6 +24,7 @@
 
 var res = {
     HelloWorld_png : "res/HelloWorld.png",
+    NakamaLogo_png : "res/nakama_logo.png",
 };
 
 var g_resources = [];
