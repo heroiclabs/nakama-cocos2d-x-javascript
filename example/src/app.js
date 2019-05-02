@@ -60,14 +60,6 @@ var HelloWorldLayer = cc.Layer.extend({
         });
         this.addChild(this.sprite, 0);
 
-        if (!window.btoa) {
-            window.btoa = nakamajs.btoa;
-        }
-
-        if (!window.atob) {
-            window.atob = nakamajs.atob;
-        }
-
         var serverkey = "defaultkey";
         var host = "127.0.0.1";
         var port = 7350;
