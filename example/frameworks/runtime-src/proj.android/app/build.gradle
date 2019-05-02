@@ -4,7 +4,6 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion PROP_COMPILE_SDK_VERSION.toInteger()
-    buildToolsVersion PROP_BUILD_TOOLS_VERSION
 
     defaultConfig {
         applicationId "com.heroiclabs.nakamacocos2dx.js"
@@ -147,7 +146,7 @@ android.applicationVariants.all { variant ->
     // delete previous files first
     delete dest_assets_folder
 
-    variant.mergeAssets.doLast {
+    variant.mergeAssetsProvider.get().doLast {
         copy {
             from project_root_folder + "/res"
             into dest_assets_folder + "/res"
