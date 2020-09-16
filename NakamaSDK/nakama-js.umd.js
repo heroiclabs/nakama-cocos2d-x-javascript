@@ -68,6 +68,16 @@
         return output;
       });
 
+      // TODO(Dmytro/Luke) - beginning of patch
+      if (!window.btoa) {
+          window.btoa = object.btoa;
+      }
+
+      if (!window.atob) {
+          window.atob = object.atob;
+      }
+      // end of patch
+
     }());
 
     (function(self) {
