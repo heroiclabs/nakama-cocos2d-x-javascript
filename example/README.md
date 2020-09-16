@@ -13,7 +13,7 @@ If you encounter any issues with the server you can generate diagnostics for us 
 
 To get started using Nakama in Cocos2d-x js, you will need the following:
 
-1. [Cocos2d-x Engine](http://www.cocos2d-x.org/download) 3.17 or greater.
+1. [Cocos2d-x Engine](http://www.cocos2d-x.org/download) 3.17.1 or greater.
 2. A compiler for the platform you are developing on, such as [Visual Studio](https://www.visualstudio.com/vs/community/) on Windows or [XCode](https://developer.apple.com/xcode/download/) on OSX.
 
 #### Supported platforms
