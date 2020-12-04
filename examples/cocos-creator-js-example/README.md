@@ -1,0 +1,1 @@
+To build this example, build it through Cocos Creator's `build` button and run it via the `run` button or `cd` into `build/jsb-default` and use the `cocos run` command with the platform of your choice, e.g., `cocos run -p ios`
