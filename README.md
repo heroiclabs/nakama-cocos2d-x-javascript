@@ -156,7 +156,7 @@ The development roadmap is managed as GitHub issues and pull requests are welcom
 
 ### Example
 
-Example is located in [example](https://github.com/heroiclabs/nakama-cocos2d-x-javascript/tree/master/example) folder.
+Examples for cocos-2d-js an Cocos Creator are located in the [examples](https://github.com/heroiclabs/nakama-cocos2d-x-javascript/tree/master/examples) folder.
 
 ### License
 
