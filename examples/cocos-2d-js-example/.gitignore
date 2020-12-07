@@ -18,3 +18,4 @@ local.properties
 /.project
 /publish
 cmake-build-debug
+frameworks
