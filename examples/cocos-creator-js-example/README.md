@@ -2,3 +2,5 @@ To build this example, build it through Cocos Creator's `build` button and run i
 
 
 Note: To run in the XCode 12 on the iOS simulator, you must set append the 'x86_64' architecture to the VALID_ARCHS build setting in both the Cocos and Example ios targets.
+
+This example is intended for use in Cocos Creator 2.3.4.
