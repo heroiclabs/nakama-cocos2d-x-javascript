@@ -28,22 +28,18 @@ export default class Login extends cc.Component {
 
         var useSSL = false;
         var timeout = 7000; // ms
-        cc.log(" values for client are serverkey "+serverkey+" host "+host+" port "+port);
         this.client = new nakamajs.Client(serverkey, host, port, useSSL, timeout);
-        cc.log(" client made ");
         var self = this;
-        let p_:Promise<any> =   this.client.authenticateCustom({ id: "testtoken", create: true, username: "" });
+        let p_:Promise<any> = this.client.authenticateCustom("test_id");
         p_.then(function (sessio) {
             self.label.string = "auth success";
             cc.log(" auth success");
         },
         function (error) {
             self.label.string = "auth error "+error;
-            cc.log(" auth error "+error);
             cc.log(" auth error "+JSON.stringify( error));
         }).catch((err) => {
             cc.log(" auth exception "+err);
-
         });
     }
 

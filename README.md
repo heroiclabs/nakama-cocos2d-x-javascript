@@ -43,10 +43,7 @@ There's a variety of ways to [authenticate](https://heroiclabs.com/docs/authenti
 var email = "super@heroes.com";
 var password = "batsignal";
 
-client.authenticateEmail({
-  email: email,
-  password: password
-}).then(function(session) {
+client.authenticateEmail(email, password).then(function(session) {
         cc.log("Authenticated successfully. User id:", session.user_id);
     },
     function(error) {
