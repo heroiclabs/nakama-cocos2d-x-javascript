@@ -1602,12 +1602,12 @@
               };
           });
       }
-      disconnect(fireDisconnectEvent = true) {
+      disconnect(fireDisconnectEvent = true, evt) {
           if (this.adapter.isConnected) {
               this.adapter.close();
           }
           if (fireDisconnectEvent) {
-              this.ondisconnect({});
+              this.ondisconnect(evt === void 0 ? {} : evt );
           }
       }
       ondisconnect(evt) {
