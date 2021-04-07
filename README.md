@@ -26,7 +26,7 @@ You'll need to setup the server and database before you can connect with the cli
 ```json
 "jsList" : [
   ...
-  "src/NakamaSDK/ThirdParty/polyfill.js",
+  "src/NakamaSDK/ThirdParty/polyfill.min.js",
   "src/NakamaSDK/nakama-js.umd.js"
 ]
 ```
