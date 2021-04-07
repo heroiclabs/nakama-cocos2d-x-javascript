@@ -4,72 +4,6 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.nakamajs = {}));
   }(this, (function (exports) { 'use strict';
 
-    (function () {
-
-      var object =
-        typeof exports != 'undefined' ? exports :
-        typeof self != 'undefined' ? self : // #8: web workers
-        $.global; // #31: ExtendScript
-
-      var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-
-      function InvalidCharacterError(message) {
-        this.message = message;
-      }
-      InvalidCharacterError.prototype = new Error;
-      InvalidCharacterError.prototype.name = 'InvalidCharacterError';
-
-      // encoder
-      // [https://gist.github.com/999166] by [https://github.com/nignag]
-      object.btoa || (
-      object.btoa = function (input) {
-        var str = String(input);
-        for (
-          // initialize result and counter
-          var block, charCode, idx = 0, map = chars, output = '';
-          // if the next str index does not exist:
-          //   change the mapping table to "="
-          //   check if d has no fractional digits
-          str.charAt(idx | 0) || (map = '=', idx % 1);
-          // "8 - idx % 1 * 8" generates the sequence 2, 4, 6, 8
-          output += map.charAt(63 & block >> 8 - idx % 1 * 8)
-        ) {
-          charCode = str.charCodeAt(idx += 3/4);
-          if (charCode > 0xFF) {
-            throw new InvalidCharacterError("'btoa' failed: The string to be encoded contains characters outside of the Latin1 range.");
-          }
-          block = block << 8 | charCode;
-        }
-        return output;
-      });
-
-      // decoder
-      // [https://gist.github.com/1020396] by [https://github.com/atk]
-      object.atob || (
-      object.atob = function (input) {
-        var str = String(input).replace(/[=]+$/, ''); // #31: ExtendScript bad parse of /=
-        if (str.length % 4 == 1) {
-          throw new InvalidCharacterError("'atob' failed: The string to be decoded is not correctly encoded.");
-        }
-        for (
-          // initialize result and counters
-          var bc = 0, bs, buffer, idx = 0, output = '';
-          // get next character
-          buffer = str.charAt(idx++);
-          // character found in table? initialize bit storage and add its ascii value;
-          ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
-            // and if not first of each 4 characters,
-            // convert the first 8 bits to one ascii character
-            bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
-        ) {
-          // try to find character in table (0-63, not found => -1)
-          buffer = chars.indexOf(buffer);
-        }
-        return output;
-      });
-
-    }());
-
     (function(self) {
 
       if (self.fetch) {
@@ -522,6 +456,10 @@
             xhr.withCredentials = false;
           }
 
+          if ('responseType' in xhr && support.blob) {
+            xhr.responseType = 'blob';
+          }
+
           request.headers.forEach(function(value, name) {
             xhr.setRequestHeader(name, value);
           });
@@ -596,6 +534,196 @@
         }
     }
 
+    /**
+     *  base64.ts
+     *
+     *  Licensed under the BSD 3-Clause License.
+     *    http://opensource.org/licenses/BSD-3-Clause
+     *
+     *  References:
+     *    http://en.wikipedia.org/wiki/Base64
+     *
+     * @author Dan Kogai (https://github.com/dankogai)
+     */
+    const _hasatob = typeof atob === 'function';
+    const _hasbtoa = typeof btoa === 'function';
+    const _hasBuffer = typeof Buffer === 'function';
+    const _TD = typeof TextDecoder === 'function' ? new TextDecoder() : undefined;
+    const _TE = typeof TextEncoder === 'function' ? new TextEncoder() : undefined;
+    const b64ch = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    const b64chs = [...b64ch];
+    const b64tab = ((a) => {
+        let tab = {};
+        a.forEach((c, i) => tab[c] = i);
+        return tab;
+    })(b64chs);
+    const b64re = /^(?:[A-Za-z\d+\/]{4})*?(?:[A-Za-z\d+\/]{2}(?:==)?|[A-Za-z\d+\/]{3}=?)?$/;
+    const _fromCC = String.fromCharCode.bind(String);
+    const _U8Afrom = typeof Uint8Array.from === 'function'
+        ? Uint8Array.from.bind(Uint8Array)
+        : (it, fn = (x) => x) => new Uint8Array(Array.prototype.slice.call(it, 0).map(fn));
+    const _mkUriSafe = (src) => src
+        .replace(/[+\/]/g, (m0) => m0 == '+' ? '-' : '_')
+        .replace(/=+$/m, '');
+    const _tidyB64 = (s) => s.replace(/[^A-Za-z0-9\+\/]/g, '');
+    /**
+     * polyfill version of `btoa`
+     */
+    const btoaPolyfill = (bin) => {
+        // console.log('polyfilled');
+        let u32, c0, c1, c2, asc = '';
+        const pad = bin.length % 3;
+        for (let i = 0; i < bin.length;) {
+            if ((c0 = bin.charCodeAt(i++)) > 255 ||
+                (c1 = bin.charCodeAt(i++)) > 255 ||
+                (c2 = bin.charCodeAt(i++)) > 255)
+                throw new TypeError('invalid character found');
+            u32 = (c0 << 16) | (c1 << 8) | c2;
+            asc += b64chs[u32 >> 18 & 63]
+                + b64chs[u32 >> 12 & 63]
+                + b64chs[u32 >> 6 & 63]
+                + b64chs[u32 & 63];
+        }
+        return pad ? asc.slice(0, pad - 3) + "===".substring(pad) : asc;
+    };
+    /**
+     * does what `window.btoa` of web browsers do.
+     * @param {String} bin binary string
+     * @returns {string} Base64-encoded string
+     */
+    const _btoa = _hasbtoa ? (bin) => btoa(bin)
+        : _hasBuffer ? (bin) => Buffer.from(bin, 'binary').toString('base64')
+            : btoaPolyfill;
+    const _fromUint8Array = _hasBuffer
+        ? (u8a) => Buffer.from(u8a).toString('base64')
+        : (u8a) => {
+            // cf. https://stackoverflow.com/questions/12710001/how-to-convert-uint8-array-to-base64-encoded-string/12713326#12713326
+            const maxargs = 0x1000;
+            let strs = [];
+            for (let i = 0, l = u8a.length; i < l; i += maxargs) {
+                strs.push(_fromCC.apply(null, u8a.subarray(i, i + maxargs)));
+            }
+            return _btoa(strs.join(''));
+        };
+    // This trick is found broken https://github.com/dankogai/js-base64/issues/130
+    // const utob = (src: string) => unescape(encodeURIComponent(src));
+    // reverting good old fationed regexp
+    const cb_utob = (c) => {
+        if (c.length < 2) {
+            var cc = c.charCodeAt(0);
+            return cc < 0x80 ? c
+                : cc < 0x800 ? (_fromCC(0xc0 | (cc >>> 6))
+                    + _fromCC(0x80 | (cc & 0x3f)))
+                    : (_fromCC(0xe0 | ((cc >>> 12) & 0x0f))
+                        + _fromCC(0x80 | ((cc >>> 6) & 0x3f))
+                        + _fromCC(0x80 | (cc & 0x3f)));
+        }
+        else {
+            var cc = 0x10000
+                + (c.charCodeAt(0) - 0xD800) * 0x400
+                + (c.charCodeAt(1) - 0xDC00);
+            return (_fromCC(0xf0 | ((cc >>> 18) & 0x07))
+                + _fromCC(0x80 | ((cc >>> 12) & 0x3f))
+                + _fromCC(0x80 | ((cc >>> 6) & 0x3f))
+                + _fromCC(0x80 | (cc & 0x3f)));
+        }
+    };
+    const re_utob = /[\uD800-\uDBFF][\uDC00-\uDFFFF]|[^\x00-\x7F]/g;
+    /**
+     * @deprecated should have been internal use only.
+     * @param {string} src UTF-8 string
+     * @returns {string} UTF-16 string
+     */
+    const utob = (u) => u.replace(re_utob, cb_utob);
+    //
+    const _encode = _hasBuffer
+        ? (s) => Buffer.from(s, 'utf8').toString('base64')
+        : _TE
+            ? (s) => _fromUint8Array(_TE.encode(s))
+            : (s) => _btoa(utob(s));
+    /**
+     * converts a UTF-8-encoded string to a Base64 string.
+     * @param {boolean} [urlsafe] if `true` make the result URL-safe
+     * @returns {string} Base64 string
+     */
+    const encode = (src, urlsafe = false) => urlsafe
+        ? _mkUriSafe(_encode(src))
+        : _encode(src);
+    // This trick is found broken https://github.com/dankogai/js-base64/issues/130
+    // const btou = (src: string) => decodeURIComponent(escape(src));
+    // reverting good old fationed regexp
+    const re_btou = /[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}/g;
+    const cb_btou = (cccc) => {
+        switch (cccc.length) {
+            case 4:
+                var cp = ((0x07 & cccc.charCodeAt(0)) << 18)
+                    | ((0x3f & cccc.charCodeAt(1)) << 12)
+                    | ((0x3f & cccc.charCodeAt(2)) << 6)
+                    | (0x3f & cccc.charCodeAt(3)), offset = cp - 0x10000;
+                return (_fromCC((offset >>> 10) + 0xD800)
+                    + _fromCC((offset & 0x3FF) + 0xDC00));
+            case 3:
+                return _fromCC(((0x0f & cccc.charCodeAt(0)) << 12)
+                    | ((0x3f & cccc.charCodeAt(1)) << 6)
+                    | (0x3f & cccc.charCodeAt(2)));
+            default:
+                return _fromCC(((0x1f & cccc.charCodeAt(0)) << 6)
+                    | (0x3f & cccc.charCodeAt(1)));
+        }
+    };
+    /**
+     * @deprecated should have been internal use only.
+     * @param {string} src UTF-16 string
+     * @returns {string} UTF-8 string
+     */
+    const btou = (b) => b.replace(re_btou, cb_btou);
+    /**
+     * polyfill version of `atob`
+     */
+    const atobPolyfill = (asc) => {
+        // console.log('polyfilled');
+        asc = asc.replace(/\s+/g, '');
+        if (!b64re.test(asc))
+            throw new TypeError('malformed base64.');
+        asc += '=='.slice(2 - (asc.length & 3));
+        let u24, bin = '', r1, r2;
+        for (let i = 0; i < asc.length;) {
+            u24 = b64tab[asc.charAt(i++)] << 18
+                | b64tab[asc.charAt(i++)] << 12
+                | (r1 = b64tab[asc.charAt(i++)]) << 6
+                | (r2 = b64tab[asc.charAt(i++)]);
+            bin += r1 === 64 ? _fromCC(u24 >> 16 & 255)
+                : r2 === 64 ? _fromCC(u24 >> 16 & 255, u24 >> 8 & 255)
+                    : _fromCC(u24 >> 16 & 255, u24 >> 8 & 255, u24 & 255);
+        }
+        return bin;
+    };
+    /**
+     * does what `window.atob` of web browsers do.
+     * @param {String} asc Base64-encoded string
+     * @returns {string} binary string
+     */
+    const _atob = _hasatob ? (asc) => atob(_tidyB64(asc))
+        : _hasBuffer ? (asc) => Buffer.from(asc, 'base64').toString('binary')
+            : atobPolyfill;
+    //
+    const _toUint8Array = _hasBuffer
+        ? (a) => _U8Afrom(Buffer.from(a, 'base64'))
+        : (a) => _U8Afrom(_atob(a), c => c.charCodeAt(0));
+    //
+    const _decode = _hasBuffer
+        ? (a) => Buffer.from(a, 'base64').toString('utf8')
+        : _TD
+            ? (a) => _TD.decode(_toUint8Array(a))
+            : (a) => btou(_atob(a));
+    const _unURI = (a) => _tidyB64(a.replace(/[-_]/g, (m0) => m0 == '-' ? '+' : '/'));
+    /**
+     * converts a Base64 string to a UTF-8 string.
+     * @param {String} src Base64 string.  Both normal and URL-safe are supported
+     * @returns {string} UTF-8 string
+     */
+    const decode = (src) => _decode(_unURI(src));
+
     var NakamaApi = (function () {
         function NakamaApi(configuration) {
             this.configuration = configuration;
@@ -626,7 +754,7 @@
                 fetchOptions.headers["Authorization"] = "Bearer " + this.configuration.bearerToken;
             }
             else if (this.configuration.username) {
-                fetchOptions.headers["Authorization"] = "Basic " + btoa(this.configuration.username + ":" + this.configuration.password);
+                fetchOptions.headers["Authorization"] = "Basic " + encode(this.configuration.username + ":" + this.configuration.password);
             }
             if (!Object.keys(fetchOptions.headers).includes("Accept")) {
                 fetchOptions.headers["Accept"] = "application/json";
@@ -905,6 +1033,17 @@
                 throw new Error("'body' is a required parameter but is null or undefined.");
             }
             var urlPath = "/v2/account/link/steam";
+            var queryParams = {};
+            var _body = null;
+            _body = JSON.stringify(body || {});
+            return this.doFetch(urlPath, "POST", queryParams, _body, options);
+        };
+        NakamaApi.prototype.sessionRefresh = function (body, options) {
+            if (options === void 0) { options = {}; }
+            if (body === null || body === undefined) {
+                throw new Error("'body' is a required parameter but is null or undefined.");
+            }
+            var urlPath = "/v2/account/session/refresh";
             var queryParams = {};
             var _body = null;
             _body = JSON.stringify(body || {});
@@ -1639,12 +1778,12 @@
     }());
 
     function b64EncodeUnicode(str) {
-        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function toSolidBytes(_match, p1) {
+        return encode(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function toSolidBytes(_match, p1) {
             return String.fromCharCode(Number('0x' + p1));
         }));
     }
     function b64DecodeUnicode(str) {
-        return decodeURIComponent(atob(str).split('').map(function (c) {
+        return decodeURIComponent(decode(str).split('').map(function (c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
     }
@@ -2095,22 +2234,22 @@
                 return Session.restore(apiSession.token || "");
             });
         };
-        Client.prototype.authenticateDevice = function (id, vars) {
+        Client.prototype.authenticateDevice = function (id, create, username, vars) {
             var request = {
                 "id": id,
                 "vars": vars
             };
-            return this.apiClient.authenticateDevice(request).then(function (apiSession) {
+            return this.apiClient.authenticateDevice(request, create, username).then(function (apiSession) {
                 return Session.restore(apiSession.token || "");
             });
         };
-        Client.prototype.authenticateEmail = function (email, password, vars) {
+        Client.prototype.authenticateEmail = function (email, password, create, username, vars) {
             var request = {
                 "email": email,
                 "password": password,
                 "vars": vars
             };
-            return this.apiClient.authenticateEmail(request).then(function (apiSession) {
+            return this.apiClient.authenticateEmail(request, create, username).then(function (apiSession) {
                 return Session.restore(apiSession.token || "");
             });
         };
@@ -2144,21 +2283,21 @@
                 return Session.restore(apiSession.token || "");
             });
         };
-        Client.prototype.authenticateGameCenter = function (token, vars) {
+        Client.prototype.authenticateGameCenter = function (token, create, username, vars) {
             var request = {
                 "token": token,
                 "vars": vars
             };
-            return this.apiClient.authenticateGameCenter(request).then(function (apiSession) {
+            return this.apiClient.authenticateGameCenter(request, create, username).then(function (apiSession) {
                 return Session.restore(apiSession.token || "");
             });
         };
-        Client.prototype.authenticateSteam = function (token, vars) {
+        Client.prototype.authenticateSteam = function (token, create, username, vars) {
             var request = {
                 "token": token,
                 "vars": vars
             };
-            return this.apiClient.authenticateSteam(request).then(function (apiSession) {
+            return this.apiClient.authenticateSteam(request, create, username).then(function (apiSession) {
                 return Session.restore(apiSession.token || "");
             });
         };
@@ -2509,7 +2648,8 @@
                             timezone: f.user.timezone,
                             update_time: f.user.update_time,
                             username: f.user.username,
-                            metadata: f.user.metadata ? JSON.parse(f.user.metadata) : undefined
+                            metadata: f.user.metadata ? JSON.parse(f.user.metadata) : undefined,
+                            facebook_instant_game_id: f.user.facebook_instant_game_id
                         },
                         state: f.state
                     });
